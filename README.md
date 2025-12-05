@@ -132,7 +132,42 @@ string(size_t n, char c);
 
 ### 1.3 单调栈
 
+hot100_793  hot100_84
 
+**栈顶最小单调栈**
+
+左侧到右侧遍历，某个元素的下一个更大值。
+
+```cpp
+for(int i=0;i<n;i++){
+    while(!s.empty()&&temperatures[i]>temperatures[s.top()]){
+        int tmp=s.top();
+        ans[tmp]=i-tmp;
+        s.pop();
+    }
+    s.push(i);
+}
+```
+
+**栈顶最大单调栈**
+
+左侧到右侧遍历，某个元素的下一个更小值。
+
+```cpp
+for(int i=0;i<n;i++){
+    while(!mono_stack.empty()&&heights[mono_stack.top()]>=heights[i]){
+        mono_stack.pop();
+    }
+    left[i]=(mono_stack.empty()?-1:mono_stack.top());
+    mono_stack.push(i);
+}
+```
+
+核心：要求第一个更小值还是第一个更大值。
+
+更大值就需要栈顶最小单调栈，遍历时候 当前元素大于栈顶，那么栈顶出栈，记录坐标，小于栈顶就push栈里。
+
+更小值就需要栈顶最小栈，遍历时候 当前元素小于栈顶，那么出栈，记录坐标，大于栈顶就push栈里。
 
 ## 二、特征题总结
 
