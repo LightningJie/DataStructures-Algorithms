@@ -185,7 +185,7 @@ for(int i=0;i<n;i++){
 
 
 
-全排列问题思考方式：
+**全排列问题思考方式：**
 
 1. 写一个朴素 DFS 框架
 2. 问自己：
@@ -226,6 +226,69 @@ void dfs(...) {
 ```cpp
 path.pop_back();
 used[i] = false;
+```
+
+**求全排列模板：**
+
+```cpp
+void backtrack(vector<int>& nums,vector<int> &path,vector<bool> &used,vector<vector<int>>& res){
+    if(path.size()==nums.size()){
+        res.push_back(path);
+        return;
+    }
+    for(int i=0;i<nums.size();i++){
+        if (used[i]) continue;  
+        // 做选择
+        path.push_back(nums[i]);
+        used[i] = true;
+
+        // 递归进入下一层
+        backtrack(nums, path, used, res);
+
+        // 撤销选择（回溯）
+        path.pop_back();
+        used[i] = false;
+    }
+}
+```
+
+**求子集思考方式：**
+
+这道题的回溯**不是像全排列“从一堆数里选一个”**，而是：
+
+> **对每个位置 `cur`（从 0 到 n-1），决定要不要把 `nums[cur]` 加入子集。**
+
+递归的“层级”对应的是 **数组的下标**
+
+```cpp
+                (cur=0)
+               /        \
+           选1           不选1
+          (cur=1)        (cur=1)
+         /      \        /      \
+      选2       不选2   选2     不选2
+     (cur=2)   (cur=2)  (cur=2) (cur=2)
+     /   \     /   \    /   \   /   \
+   选3  不选3 ...                    ...
+```
+
+**模板**
+
+```cpp
+void dfs(int index, vector<int>& nums) {
+    if (index == nums.size()) {
+        result.push_back(current_subset);
+        return;
+    }
+
+    // 选
+    current_subset.push_back(nums[index]);
+    dfs(index + 1, nums);
+    current_subset.pop_back();
+
+    // 不选
+    dfs(index + 1, nums);
+}
 ```
 
 
