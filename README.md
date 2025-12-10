@@ -291,6 +291,38 @@ void dfs(int index, vector<int>& nums) {
 }
 ```
 
+### 1.4 高效回文
+
+双指针回文
+
+```cpp
+bool isPalindrome(const string& s) {
+    int left = 0, right = s.size() - 1;
+    while (left < right) {
+        if (s[left] != s[right]) 
+            return false;
+        left++;
+        right--;
+    }
+    return true;
+}
+```
+
+**动态规划（DP）预处理所有子串是否为回文**
+
+```cpp
+// dp[i][j] = true 表示 s[i..j] 是回文
+vector<vector<bool>> dp(n, vector<bool>(n, false));
+for (int i = n-1; i >= 0; i--) {
+    for (int j = i; j < n; j++) {
+        if (s[i] == s[j] && (j - i <= 2 || dp[i+1][j-1]))
+            dp[i][j] = true;
+    }
+}
+```
+
+区别 dp字串回文能一次性处理所有子串是否回文。
+
 
 
 ## 二、特征题总结
