@@ -333,6 +333,179 @@ while (x) {
 }
 ```
 
+### 1.6 感染传播
+
+```cpp
+int multiSourceInfection(vector<vector<int>>& grid) {
+    if (grid.empty() || grid[0].empty()) 
+        return -1; // 或根据题意返回其他值
+
+    int m = grid.size(), n = grid[0].size();
+    queue<pair<int, int>> q;
+    int targetCount = 0; // 需要被“感染”的目标单元格数量（如新鲜橘子）
+
+    // ✅ 步骤1：初始化 —— 找出所有“源头”和统计目标
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < n; ++j) {
+            if (isSource(grid[i][j])) {          // 判断是否为初始感染源（如腐烂橘子）
+                q.push({i, j});
+            } else if (isTarget(grid[i][j])) {   // 判断是否为目标（如新鲜橘子）
+                targetCount++;
+            }
+        }
+    }
+
+    // ✅ 特判：若无需感染，直接返回
+    if (targetCount == 0) 
+        return 0;
+
+    // ✅ 方向数组（4方向 or 8方向按需改）
+    vector<pair<int, int>> dirs = {{1,0}, {-1,0}, {0,1}, {0,-1}};
+    int minutes = 0;
+
+    // ✅ 步骤2：多源 BFS
+    while (!q.empty() && targetCount > 0) {
+        int size = q.size(); // 当前这一轮的所有感染源（当前层）
+        for (int i = 0; i < size; ++i) {
+            auto [x, y] = q.front(); q.pop();
+            for (auto& d : dirs) {
+                int nx = x + d.first;
+                int ny = y + d.second;
+                // 边界检查 + 是否为目标状态
+                if (nx >= 0 && nx < m && ny >= 0 && ny < n && isTarget(grid[nx][ny])) {
+                    markAsInfected(grid[nx][ny]); // 标记为已感染（如 1 → 2）
+                    targetCount--;
+                    q.push({nx, ny});
+                }
+            }
+        }
+        minutes++; // 每完成一轮传播，时间+1
+    }
+
+    // ✅ 步骤3：判断是否全部感染成功
+    return targetCount == 0 ? minutes : -1; // -1 表示无法完全感染
+}
+
+```
+
+### 1.7 有向图有无环
+
+**课程表问题 = 有向图环检测 = 拓扑排序可行性判断**
+
+| 方法                 | 核心思想                          | 数据结构                   | 是否能输出拓扑序 | 适用场景                     |
+| -------------------- | --------------------------------- | -------------------------- | ---------------- | ---------------------------- |
+| **Kahn 算法（BFS）** | 基于入度，不断移除入度为 0 的节点 | 队列 + 入度数组 + 邻接表   | ✅ 可以           | 更直观，适合需要顺序的场景   |
+| **DFS 三色标记法**   | 递归遍历，用颜色标记状态检测回边  | 递归栈 + 状态数组 + 邻接表 | ❌ 不能直接输出   | 代码简洁，适合只判断是否有环 |
+
+```cpp
+#include <vector>
+using namespace std;
+
+class Solution {
+public:
+    bool canFinish(int numCourses, vector<vector<int>>& prerequisites) {
+        // 构建邻接表
+        vector<vector<int>> graph(numCourses);
+        for (const auto& pre : prerequisites) {
+            int from = pre[1];   // 先修课
+            int to = pre[0];     // 后续课
+            graph[from].push_back(to);
+        }
+
+        // visited[i] 表示节点 i 的状态：
+        // 0 = 未访问（白色）
+        // 1 = 正在访问（灰色）
+        // 2 = 已完成访问（黑色）
+        vector<int> visited(numCourses, 0);
+
+        // 对每个课程进行 DFS（防止图不连通）
+        for (int i = 0; i < numCourses; ++i) {
+            if (!dfs(i, graph, visited)) {
+                return false; // 发现环
+            }
+        }
+        return true;
+    }
+
+private:
+    bool dfs(int node, const vector<vector<int>>& graph, vector<int>& visited) {
+        if (visited[node] == 1) {
+            return false; // 遇到灰色节点 → 有环
+        }
+        if (visited[node] == 2) {
+            return true;  // 黑色节点，已确认安全
+        }
+
+        // 标记为灰色（进入递归栈）
+        visited[node] = 1;
+
+        // 递归访问所有邻居
+        for (int neighbor : graph[node]) {
+            if (!dfs(neighbor, graph, visited)) {
+                return false;
+            }
+        }
+
+        // 回溯：标记为黑色（离开递归栈）
+        visited[node] = 2;
+        return true;
+    }
+};
+```
+
+```cpp
+#include <vector>
+#include <queue>
+using namespace std;
+
+class Solution {
+public:
+    bool canFinish(int numCourses, vector<vector<int>>& prerequisites) {
+        // 构建邻接表和入度数组
+        vector<vector<int>> graph(numCourses);
+        vector<int> indegree(numCourses, 0);
+
+        // 建图：prerequisites[i] = [ai, bi] 表示 bi -> ai
+        for (const auto& pre : prerequisites) {
+            int ai = pre[0];
+            int bi = pre[1];
+            graph[bi].push_back(ai);      // bi 是 ai 的先修课
+            indegree[ai]++;               // ai 的入度加一
+        }
+
+        // 将所有入度为 0 的课程加入队列
+        queue<int> q;
+        for (int i = 0; i < numCourses; ++i) {
+            if (indegree[i] == 0) {
+                q.push(i);
+            }
+        }
+
+        int learned = 0; // 已学习的课程数量
+
+        // BFS 拓扑排序
+        while (!q.empty()) {
+            int cur = q.front();
+            q.pop();
+            learned++;
+
+            // 遍历当前课程的所有后续课程
+            for (int neighbor : graph[cur]) {
+                indegree[neighbor]--;
+                if (indegree[neighbor] == 0) {
+                    q.push(neighbor);
+                }
+            }
+        }
+
+        // 如果学完了所有课程，说明无环，可以完成
+        return learned == numCourses;
+    }
+};
+```
+
+
+
 ## 二、特征题总结
 
 ### 2.1 柱子题
