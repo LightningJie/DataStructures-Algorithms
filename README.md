@@ -504,6 +504,66 @@ public:
 };
 ```
 
+### 1.8 快速选择排序
+
+在 **未排序数组** 中 **平均 O(n)** 时间找到 **第 k 小 / 第 k 大** 的元素。
+
+> LeetCode 典型题：215. 数组中的第K个最大元素
+
+------
+
+核心思想
+
+- 基于 **快排的分区（Partition）** 思想。
+- 每次选一个pivot，将数组分为：
+  - 左边 ≤ pivot
+  - 右边 > pivot
+- 分区后，**pivot 落在最终排序位置** → 知道它是“第几小”。
+- **只递归目标所在的一半**，另一侧直接丢弃！
+
+> 平均时间复杂度：**O(n)**
+> 空间复杂度：**O(log n)**（递归栈）
+
+第 k 个最大的元素 = 第 (n - k) 小的元素（0-based 索引）
+
+------
+
+**板子代码（Hoare 分区 + 随机化 pivot）**
+
+```cpp
+class Solution {
+public:
+    int findKthLargest(vector<int>& nums, int k) {
+        return quickSelect(nums, 0, nums.size() - 1, nums.size() - k);
+    }
+
+private:
+    int quickSelect(vector<int>& nums, int l, int r, int k) {
+        if (l == r) return nums[l]; // 终止条件
+
+        //  随机化 pivot：防止最坏情况
+        int randomIdx = l + rand() % (r - l + 1);
+        swap(nums[l], nums[randomIdx]);
+
+        int pivot = nums[l];
+        int i = l - 1, j = r + 1;
+
+        //  Hoare 分区
+        while (i < j) {
+            do i++; while (nums[i] < pivot);
+            do j--; while (nums[j] > pivot);
+            if (i < j) swap(nums[i], nums[j]);
+        }
+
+        //分治：k 在哪一边？
+        if (k <= j) 
+            return quickSelect(nums, l, j, k);     // 左半 [l, j]
+        else 
+            return quickSelect(nums, j + 1, r, k); // 右半 [j+1, r]
+    }
+};
+```
+
 
 
 ## 二、特征题总结
